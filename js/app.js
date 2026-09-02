@@ -32,6 +32,11 @@
     timerId: null,
     deadline: null,
     timerStarted: false,
+    gc2Derived: {
+      chaosType: false,
+      exdeathDebuff: false,
+      disableAcceleration: false,
+    },
   };
 
   const els = {
@@ -57,6 +62,8 @@
   }
 
   function selectChoice(button) {
+    if (button.disabled) return;
+
     const group = button.dataset.group;
     const rawValue = button.dataset.value;
     const record = currentRecord();
@@ -76,13 +83,54 @@
     return value;
   }
 
+  function isGc2DerivedButton(group, normalizedValue) {
+    if (state.phase !== 2) return false;
+    const gc2 = state.records[1];
+
+    if (group === 'chaosType' && state.gc2Derived.chaosType) {
+      return gc2.chaosType === normalizedValue;
+    }
+
+    if (group === 'exdeathDebuff' && state.gc2Derived.exdeathDebuff) {
+      return gc2.exdeathDebuff === normalizedValue;
+    }
+
+    return false;
+  }
+
+  function isChoiceDisabled(group, normalizedValue) {
+    if (state.phase !== 2) return false;
+
+    if (group === 'chaosType' && state.gc2Derived.chaosType) {
+      return true;
+    }
+
+    if (group === 'exdeathDebuff') {
+      if (state.gc2Derived.exdeathDebuff) return true;
+      if (state.gc2Derived.disableAcceleration && normalizedValue === 'acceleration') return true;
+    }
+
+    return false;
+  }
+
   function refreshGroup(group) {
     const value = currentRecord()[group];
     document.querySelectorAll(`.choice-button[data-group="${group}"]`).forEach((button) => {
       const normalized = normalizeValue(group, button.dataset.value);
       const selected = value === normalized;
+      const derived = isGc2DerivedButton(group, normalized);
+      const disabled = isChoiceDisabled(group, normalized);
+
       button.classList.toggle('selected', selected);
+      button.classList.toggle('derived', derived);
+      button.disabled = disabled;
       button.setAttribute('aria-pressed', String(selected));
+
+      if (derived) {
+        button.setAttribute('aria-label', `${button.textContent.trim()}（GC1から自動設定）`);
+      } else {
+        button.removeAttribute('aria-label');
+      }
     });
   }
 
@@ -120,10 +168,41 @@
     state.timerStarted = false;
   }
 
+  function deriveGc2FromGc1() {
+    const gc1 = state.records[0];
+    const gc2 = state.records[1];
+
+    state.gc2Derived = {
+      chaosType: false,
+      exdeathDebuff: false,
+      disableAcceleration: false,
+    };
+
+    // カオスの炎/水は、GC1とGC2で必ず片方ずつ。
+    if (gc1.chaosType === 'fire') {
+      gc2.chaosType = 'water';
+      state.gc2Derived.chaosType = true;
+    } else if (gc1.chaosType === 'water') {
+      gc2.chaosType = 'fire';
+      state.gc2Derived.chaosType = true;
+    }
+
+    // 個人デバフは、2回のGCを通して「水雷系」と「加速度系」を1回ずつ処理する。
+    // GC1で雷/水ならGC2は加速度に確定。
+    if (gc1.exdeathDebuff === 'thunder' || gc1.exdeathDebuff === 'water') {
+      gc2.exdeathDebuff = 'acceleration';
+      state.gc2Derived.exdeathDebuff = true;
+    // GC1で加速度ならGC2は雷/水のどちらか。加速度だけ再選択不可にする。
+    } else if (gc1.exdeathDebuff === 'acceleration') {
+      state.gc2Derived.disableAcceleration = true;
+    }
+  }
+
   function finalizePhase() {
     clearTimer();
 
     if (state.phase === 1) {
+      deriveGc2FromGc1();
       state.phase = 2;
       renderPhase();
       return;
@@ -223,6 +302,11 @@
     clearTimer();
     state.phase = 1;
     state.records = [blankRecord(), blankRecord()];
+    state.gc2Derived = {
+      chaosType: false,
+      exdeathDebuff: false,
+      disableAcceleration: false,
+    };
     els.resultScreen.hidden = true;
     els.inputScreen.hidden = false;
     renderPhase();
