@@ -2,9 +2,8 @@
   const MISSING = '未入力';
 
   function gazeAction(truth) {
-    if (truth === true) return '見ない';
-    if (truth === false) return '見る！';
-    return MISSING;
+    if (truth === null || truth === undefined) return MISSING;
+    return truth ? '見ない' : '見る！';
   }
 
   function personalAction(debuff, truth) {

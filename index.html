@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#101319">
   <title>絶妖星乱舞 P4 カンペ</title>
-  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/style.css?v=20260902-1530">
 </head>
 <body>
   <div id="portraitWarning" class="portrait-warning" aria-hidden="true">
@@ -16,6 +16,8 @@
   </div>
 
   <main id="app" class="app-shell">
+    <button id="resetButton" class="global-reset-button" type="button">リセット</button>
+
     <section id="inputScreen" class="screen input-screen">
       <header class="phase-header">
         <div id="phaseTitle" class="phase-title">GC1</div>
@@ -78,7 +80,7 @@
             </button>
             <button class="choice-button" data-group="exdeathDebuff" data-value="acceleration" aria-pressed="false">
               <img src="./assets/icons/exdeath-acceleration.png" alt="" onerror="this.hidden=true">
-              <span>加速度</span>
+              <span class="compact-label">加速度</span>
             </button>
           </div>
         </section>
@@ -106,15 +108,28 @@
         </section>
       </div>
 
-      <footer class="result-footer">
-        <button id="resetButton" class="reset-button">リセット</button>
-      </footer>
+      <section class="magic-charge-panel" aria-label="マジックチャージ記録">
+        <div class="magic-toggle-block">
+          <span class="magic-charge-label">直線</span>
+          <button id="magicLineButton" class="magic-toggle-button" data-magic-toggle="line" aria-pressed="false">踏まない</button>
+        </div>
+        <div class="magic-toggle-block">
+          <span class="magic-charge-label">扇</span>
+          <button id="magicFanButton" class="magic-toggle-button" data-magic-toggle="fan" aria-pressed="false">踏まない</button>
+        </div>
+        <div class="magic-out-block" aria-live="polite">
+          <div class="magic-charge-title">マジックアウト</div>
+          <div class="magic-out-row"><span class="magic-out-truth">真：</span><strong id="magicOutTrue">全部踏まない</strong></div>
+          <div class="magic-out-row"><span class="magic-out-truth">偽：</span><strong id="magicOutFalse">全部踏む</strong></div>
+        </div>
+      </section>
+
     </section>
   </main>
 
   <div class="copyright-notice" aria-label="Copyright">FINAL FANTASY XIV © SQUARE ENIX</div>
 
-  <script src="./js/rules.js"></script>
-  <script src="./js/app.js"></script>
+  <script src="./js/rules.js?v=20260902-1530"></script>
+  <script src="./js/app.js?v=20260902-1530"></script>
 </body>
 </html>

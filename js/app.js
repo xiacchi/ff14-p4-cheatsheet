@@ -1,7 +1,8 @@
 (function () {
   const CONFIG = {
-    gc1Seconds: 15,
-    gc2Seconds: 15,
+    gc1Seconds: 10,
+    gc2Seconds: 10,
+    idleResetSeconds: 300,
   };
 
   const ASSETS = {
@@ -32,10 +33,16 @@
     timerId: null,
     deadline: null,
     timerStarted: false,
+    idleTimerId: null,
+    lastActivityAt: Date.now(),
     gc2Derived: {
       chaosType: false,
       exdeathDebuff: false,
-      restrictToThunderWater: false,
+      disableAcceleration: false,
+    },
+    magicCharge: {
+      line: false,
+      fan: false,
     },
   };
 
@@ -48,14 +55,58 @@
     resetButton: document.getElementById('resetButton'),
     personalActions: document.getElementById('personalActions'),
     timeline: document.getElementById('timeline'),
+    magicLineButton: document.getElementById('magicLineButton'),
+    magicFanButton: document.getElementById('magicFanButton'),
+    magicOutTrue: document.getElementById('magicOutTrue'),
+    magicOutFalse: document.getElementById('magicOutFalse'),
   };
 
   document.querySelectorAll('.choice-button').forEach((button) => {
     button.addEventListener('click', () => selectChoice(button));
   });
 
+  document.querySelectorAll('.magic-toggle-button').forEach((button) => {
+    button.addEventListener('click', () => toggleMagicCharge(button.dataset.magicToggle));
+  });
+
   els.completeButton.addEventListener('click', finalizePhase);
   els.resetButton.addEventListener('click', resetAll);
+
+  // 戦闘終了後などに古い入力が残らないよう、最後の操作から一定時間で初期化する。
+  ['pointerdown', 'keydown'].forEach((eventName) => {
+    document.addEventListener(eventName, restartIdleResetTimer, { passive: true });
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+
+    const idleMs = Date.now() - state.lastActivityAt;
+    if (idleMs >= CONFIG.idleResetSeconds * 1000) {
+      resetAll({ restartIdleTimer: false });
+    } else {
+      scheduleIdleReset();
+    }
+  });
+
+  function scheduleIdleReset() {
+    if (state.idleTimerId) window.clearTimeout(state.idleTimerId);
+
+    const elapsedMs = Date.now() - state.lastActivityAt;
+    const remainingMs = Math.max(0, CONFIG.idleResetSeconds * 1000 - elapsedMs);
+
+    state.idleTimerId = window.setTimeout(() => {
+      const currentIdleMs = Date.now() - state.lastActivityAt;
+      if (currentIdleMs >= CONFIG.idleResetSeconds * 1000) {
+        resetAll({ restartIdleTimer: false });
+      } else {
+        scheduleIdleReset();
+      }
+    }, remainingMs);
+  }
+
+  function restartIdleResetTimer() {
+    state.lastActivityAt = Date.now();
+    scheduleIdleReset();
+  }
 
   function currentRecord() {
     return state.records[state.phase - 1];
@@ -74,6 +125,45 @@
     refreshGroup(group);
 
     if (!state.timerStarted) startTimer();
+  }
+
+
+  function toggleMagicCharge(key) {
+    state.magicCharge[key] = !state.magicCharge[key];
+    refreshMagicCharge();
+  }
+
+  function magicOutActions() {
+    const { line, fan } = state.magicCharge;
+
+    if (!line && !fan) {
+      return { trueAction: '全部踏まない', falseAction: '全部踏む' };
+    }
+    if (line && !fan) {
+      return { trueAction: '直線踏む', falseAction: '扇踏む' };
+    }
+    if (!line && fan) {
+      return { trueAction: '扇踏む', falseAction: '直線踏む' };
+    }
+    return { trueAction: '全部踏む', falseAction: '全部踏まない' };
+  }
+
+  function refreshMagicCharge() {
+    const buttons = {
+      line: els.magicLineButton,
+      fan: els.magicFanButton,
+    };
+
+    Object.entries(buttons).forEach(([key, button]) => {
+      const active = state.magicCharge[key];
+      button.textContent = active ? '踏む' : '踏まない';
+      button.classList.toggle('selected', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+
+    const actions = magicOutActions();
+    els.magicOutTrue.textContent = actions.trueAction;
+    els.magicOutFalse.textContent = actions.falseAction;
   }
 
   function normalizeValue(group, value) {
@@ -107,7 +197,7 @@
 
     if (group === 'exdeathDebuff') {
       if (state.gc2Derived.exdeathDebuff) return true;
-      if (state.gc2Derived.restrictToThunderWater && normalizedValue === 'acceleration') return true;
+      if (state.gc2Derived.disableAcceleration && normalizedValue === 'acceleration') return true;
     }
 
     return false;
@@ -175,7 +265,7 @@
     state.gc2Derived = {
       chaosType: false,
       exdeathDebuff: false,
-      restrictToThunderWater: false,
+      disableAcceleration: false,
     };
 
     // カオスの炎/水は、GC1とGC2で必ず片方ずつ。
@@ -187,14 +277,14 @@
       state.gc2Derived.chaosType = true;
     }
 
-    // 加速度はGC1/GC2を通して必ず1回だけ付与される。
-    // したがってGC1で加速度が付かず雷/水だった場合、GC2は加速度に確定する。
+    // 個人デバフは、2回のGCを通して「水雷系」と「加速度系」を1回ずつ処理する。
+    // GC1で雷/水ならGC2は加速度に確定。
     if (gc1.exdeathDebuff === 'thunder' || gc1.exdeathDebuff === 'water') {
       gc2.exdeathDebuff = 'acceleration';
       state.gc2Derived.exdeathDebuff = true;
     // GC1で加速度ならGC2は雷/水のどちらか。加速度だけ再選択不可にする。
     } else if (gc1.exdeathDebuff === 'acceleration') {
-      state.gc2Derived.restrictToThunderWater = true;
+      state.gc2Derived.disableAcceleration = true;
     }
   }
 
@@ -230,6 +320,7 @@
     els.resultScreen.hidden = false;
     renderPersonalActions();
     renderTimeline();
+    refreshMagicCharge();
   }
 
   function renderPersonalActions() {
@@ -298,19 +389,28 @@
     });
   }
 
-  function resetAll() {
+  function resetAll(options = {}) {
+    const { restartIdleTimer = true } = options;
     clearTimer();
     state.phase = 1;
     state.records = [blankRecord(), blankRecord()];
     state.gc2Derived = {
       chaosType: false,
       exdeathDebuff: false,
-      restrictToThunderWater: false,
+      disableAcceleration: false,
     };
+    state.magicCharge = {
+      line: false,
+      fan: false,
+    };
+    refreshMagicCharge();
     els.resultScreen.hidden = true;
     els.inputScreen.hidden = false;
     renderPhase();
+
+    if (restartIdleTimer) restartIdleResetTimer();
   }
 
   renderPhase();
+  restartIdleResetTimer();
 }());
