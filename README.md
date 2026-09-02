@@ -118,11 +118,22 @@ git commit -m "Adjust P4 cheatsheet"
 git push
 ```
 
+## 著作権表記
+
+画面下部に次の表記を常時表示します。
+
+```text
+FINAL FANTASY XIV © SQUARE ENIX
+```
+
+FFXIV関連の名称・著作物に関する権利はSQUARE ENIXに帰属します。自作アイコンなど、本リポジトリ独自の素材を使用する場合でも、このアプリがFINAL FANTASY XIV向けの非公式攻略補助ツールであることを明確にするため表示を残す方針です。
+
 ## 修正履歴
 
 - GC2完了後に処理内容画面へ切り替わらない問題を修正（`hidden`属性とCSSの競合を解消）
 - GC1から確定できるGC2の炎/水・個人デバフを自動補完
 - GC1で加速度が付かなかった場合（雷/水）、GC2の加速度を確定状態として自動ONする仕様を明文化
+- 画面下部に `FINAL FANTASY XIV © SQUARE ENIX` の著作権表記を追加
 
 ## 注意
 
