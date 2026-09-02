@@ -35,7 +35,7 @@
     gc2Derived: {
       chaosType: false,
       exdeathDebuff: false,
-      disableAcceleration: false,
+      restrictToThunderWater: false,
     },
   };
 
@@ -107,7 +107,7 @@
 
     if (group === 'exdeathDebuff') {
       if (state.gc2Derived.exdeathDebuff) return true;
-      if (state.gc2Derived.disableAcceleration && normalizedValue === 'acceleration') return true;
+      if (state.gc2Derived.restrictToThunderWater && normalizedValue === 'acceleration') return true;
     }
 
     return false;
@@ -175,7 +175,7 @@
     state.gc2Derived = {
       chaosType: false,
       exdeathDebuff: false,
-      disableAcceleration: false,
+      restrictToThunderWater: false,
     };
 
     // カオスの炎/水は、GC1とGC2で必ず片方ずつ。
@@ -187,14 +187,14 @@
       state.gc2Derived.chaosType = true;
     }
 
-    // 個人デバフは、2回のGCを通して「水雷系」と「加速度系」を1回ずつ処理する。
-    // GC1で雷/水ならGC2は加速度に確定。
+    // 加速度はGC1/GC2を通して必ず1回だけ付与される。
+    // したがってGC1で加速度が付かず雷/水だった場合、GC2は加速度に確定する。
     if (gc1.exdeathDebuff === 'thunder' || gc1.exdeathDebuff === 'water') {
       gc2.exdeathDebuff = 'acceleration';
       state.gc2Derived.exdeathDebuff = true;
     // GC1で加速度ならGC2は雷/水のどちらか。加速度だけ再選択不可にする。
     } else if (gc1.exdeathDebuff === 'acceleration') {
-      state.gc2Derived.disableAcceleration = true;
+      state.gc2Derived.restrictToThunderWater = true;
     }
   }
 
@@ -305,7 +305,7 @@
     state.gc2Derived = {
       chaosType: false,
       exdeathDebuff: false,
-      disableAcceleration: false,
+      restrictToThunderWater: false,
     };
     els.resultScreen.hidden = true;
     els.inputScreen.hidden = false;
