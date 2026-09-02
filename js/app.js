@@ -1,7 +1,7 @@
 (function () {
   const CONFIG = {
-    gc1Seconds: 15,
-    gc2Seconds: 15,
+    gc1Seconds: 20,
+    gc2Seconds: 20,
     idleResetSeconds: 300,
   };
 
