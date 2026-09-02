@@ -1,7 +1,7 @@
 (function () {
   const CONFIG = {
-    gc1Seconds: 10,
-    gc2Seconds: 10,
+    gc1Seconds: 15,
+    gc2Seconds: 15,
   };
 
   const ASSETS = {
