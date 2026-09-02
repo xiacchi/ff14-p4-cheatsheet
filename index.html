@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#101319">
+  <title>絶妖星乱舞 P4 カンペ</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <div id="portraitWarning" class="portrait-warning" aria-hidden="true">
+    <div>
+      <div class="rotate-mark">↻</div>
+      <strong>横向きで使用してください</strong>
+    </div>
+  </div>
+
+  <main id="app" class="app-shell">
+    <section id="inputScreen" class="screen input-screen">
+      <header class="phase-header">
+        <div id="phaseTitle" class="phase-title">GC1</div>
+        <div id="countdown" class="countdown">入力待ち</div>
+      </header>
+
+      <div class="quadrants">
+        <section class="quadrant chaos truth-area">
+          <h2>カオス</h2>
+          <div class="button-row two-col" data-group="chaosTruth">
+            <button class="choice-button" data-group="chaosTruth" data-value="true" aria-pressed="false">
+              <img src="./assets/icons/chaos-true.png" alt="" onerror="this.hidden=true">
+              <span>真</span>
+            </button>
+            <button class="choice-button" data-group="chaosTruth" data-value="false" aria-pressed="false">
+              <img src="./assets/icons/chaos-false.png" alt="" onerror="this.hidden=true">
+              <span>偽</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="quadrant exdeath truth-area">
+          <h2>エクスデス</h2>
+          <div class="button-row two-col" data-group="exdeathTruth">
+            <button class="choice-button" data-group="exdeathTruth" data-value="true" aria-pressed="false">
+              <img src="./assets/icons/exdeath-true.png" alt="" onerror="this.hidden=true">
+              <span>真</span>
+            </button>
+            <button class="choice-button" data-group="exdeathTruth" data-value="false" aria-pressed="false">
+              <img src="./assets/icons/exdeath-false.png" alt="" onerror="this.hidden=true">
+              <span>偽</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="quadrant chaos debuff-area">
+          <h2>カオス</h2>
+          <div class="button-row two-col" data-group="chaosType">
+            <button class="choice-button" data-group="chaosType" data-value="fire" aria-pressed="false">
+              <img src="./assets/icons/chaos-fire.png" alt="" onerror="this.hidden=true">
+              <span>炎</span>
+            </button>
+            <button class="choice-button" data-group="chaosType" data-value="water" aria-pressed="false">
+              <img src="./assets/icons/chaos-water.png" alt="" onerror="this.hidden=true">
+              <span>水</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="quadrant exdeath debuff-area">
+          <h2>エクスデス</h2>
+          <div class="button-row three-col" data-group="exdeathDebuff">
+            <button class="choice-button" data-group="exdeathDebuff" data-value="thunder" aria-pressed="false">
+              <img src="./assets/icons/exdeath-thunder.png" alt="" onerror="this.hidden=true">
+              <span>雷</span>
+            </button>
+            <button class="choice-button" data-group="exdeathDebuff" data-value="water" aria-pressed="false">
+              <img src="./assets/icons/exdeath-water.png" alt="" onerror="this.hidden=true">
+              <span>水</span>
+            </button>
+            <button class="choice-button" data-group="exdeathDebuff" data-value="acceleration" aria-pressed="false">
+              <img src="./assets/icons/exdeath-acceleration.png" alt="" onerror="this.hidden=true">
+              <span>加速度</span>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <footer class="phase-footer">
+        <button id="completeButton" class="complete-button" disabled>GC1完了</button>
+      </footer>
+    </section>
+
+    <section id="resultScreen" class="screen result-screen" hidden>
+      <header class="result-header">
+        <h1>処理内容</h1>
+      </header>
+
+      <div class="result-grid">
+        <section class="personal-panel">
+          <h2>個人デバフの処理</h2>
+          <div id="personalActions" class="personal-actions"></div>
+        </section>
+
+        <section class="timeline-panel">
+          <h2>タイムライン</h2>
+          <ol id="timeline" class="timeline"></ol>
+        </section>
+      </div>
+
+      <footer class="result-footer">
+        <button id="resetButton" class="reset-button">リセット</button>
+      </footer>
+    </section>
+  </main>
+
+  <script src="./js/rules.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
