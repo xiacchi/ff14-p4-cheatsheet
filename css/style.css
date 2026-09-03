@@ -7,8 +7,13 @@
   --text: #f7f8fb;
   --muted: #aeb7c7;
   --accent: #f1c75b;
+  --accent-soft: rgba(241, 199, 91, .14);
+  --accent-glow: rgba(241, 199, 91, .35);
   --danger: #ff6b6b;
   --ok: #62d98b;
+  --interactive: #5ed7c1;
+  --interactive-soft: rgba(94, 215, 193, .13);
+  --header-height: 58px;
 }
 
 * { box-sizing: border-box; }
@@ -27,12 +32,23 @@ html, body {
   overscroll-behavior: none;
 }
 
-button {
+button, input {
   font: inherit;
+}
+
+button {
   color: inherit;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+[hidden] { display: none !important; }
 
 .app-shell {
   width: 100vw;
@@ -40,46 +56,133 @@ button {
   padding:
     max(8px, env(safe-area-inset-top))
     max(10px, env(safe-area-inset-right))
-    max(8px, env(safe-area-inset-bottom))
+    max(22px, calc(env(safe-area-inset-bottom) + 14px))
     max(10px, env(safe-area-inset-left));
-}
-
-.screen { width: 100%; height: 100%; }
-
-/* Author CSSのdisplay指定がhidden属性を上書きしないよう明示する */
-[hidden] { display: none !important; }
-
-.input-screen {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: var(--header-height) minmax(0, 1fr);
   gap: 8px;
+  background: var(--bg);
+  transition: background-color 150ms ease;
 }
 
-.phase-header {
-  min-height: 58px;
-  display: flex;
+/* GC1と処理内容は奇数テーマ。GC2だけ少し青みを増やして次入力を視覚的に区別する。 */
+.app-shell.theme-even {
+  --panel: #192131;
+  --panel-2: #222d42;
+  --accent: #8fb8ff;
+  --accent-soft: rgba(143, 184, 255, .14);
+  --accent-glow: rgba(143, 184, 255, .34);
+  background: #111722;
+}
+
+.app-header {
+  min-height: var(--header-height);
+  height: var(--header-height);
+  display: grid;
+  grid-template-columns: minmax(116px, 1fr) minmax(220px, 1.2fr) minmax(180px, 1fr);
   align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+}
+
+.header-center {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
   justify-content: center;
-  gap: 20px;
+  gap: 18px;
 }
 
 .phase-title {
-  font-size: clamp(26px, 4vw, 44px);
-  font-weight: 900;
-  letter-spacing: .08em;
+  font-size: clamp(25px, 3.7vw, 42px);
+  font-weight: 950;
+  letter-spacing: .07em;
+  white-space: nowrap;
 }
 
 .countdown {
   min-width: 8ch;
   color: var(--muted);
-  font-size: clamp(16px, 2vw, 24px);
-  font-weight: 800;
+  font-size: clamp(15px, 1.8vw, 23px);
+  font-weight: 850;
   text-align: center;
+  white-space: nowrap;
 }
 
 .countdown.urgent {
   color: var(--danger);
-  transform: scale(1.08);
+  transform: scale(1.06);
+}
+
+.global-reset-button,
+.settings-button,
+.settings-close-button,
+.complete-button,
+.magic-toggle-button,
+.secondary-button,
+.save-settings-button {
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.global-reset-button {
+  justify-self: start;
+  min-width: 102px;
+  min-height: 42px;
+  padding: 7px 18px;
+  border-radius: 13px;
+  background: #303846;
+  font-size: clamp(16px, 1.8vw, 22px);
+  font-weight: 900;
+}
+
+.global-reset-button:active,
+.settings-button:active,
+.complete-button:active,
+.magic-toggle-button:active,
+.secondary-button:active,
+.save-settings-button:active {
+  transform: scale(.97);
+}
+
+.header-tools {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.idle-elapsed {
+  min-width: 9.5em;
+  color: var(--muted);
+  font-size: clamp(12px, 1.45vw, 17px);
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.settings-button {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 12px;
+  background: #2b3340;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.screen {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.input-screen {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
 }
 
 .quadrants {
@@ -100,6 +203,7 @@ button {
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 6px;
+  transition: background-color 150ms ease, border-color 150ms ease;
 }
 
 .quadrant h2 {
@@ -160,7 +264,7 @@ button {
   bottom: 6px;
   padding: 2px 6px;
   border-radius: 999px;
-  background: rgba(241, 199, 91, .2);
+  background: var(--accent-soft);
   color: var(--accent);
   font-size: clamp(10px, 1.1vw, 13px);
   font-weight: 900;
@@ -168,48 +272,39 @@ button {
 
 .choice-button.selected {
   border-color: var(--accent);
-  background: rgba(241, 199, 91, .14);
-  box-shadow: inset 0 0 0 2px rgba(241, 199, 91, .35), 0 0 20px rgba(241, 199, 91, .18);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 2px var(--accent-glow), 0 0 20px rgba(255, 255, 255, .06);
 }
 
-.phase-footer, .result-footer {
-  min-height: 52px;
+.compact-label { white-space: nowrap; }
+
+.phase-footer {
+  min-height: 50px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.complete-button, .reset-button {
-  min-width: min(44vw, 420px);
-  min-height: 48px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  font-size: clamp(18px, 2.3vw, 26px);
-  font-weight: 900;
-}
-
 .complete-button {
+  min-width: min(44vw, 420px);
+  min-height: 46px;
+  border-radius: 14px;
   background: var(--accent);
-  color: #1a1609;
+  color: #161a21;
+  font-size: clamp(18px, 2.3vw, 26px);
+  font-weight: 950;
 }
 
 .complete-button:disabled {
   opacity: .35;
   filter: grayscale(1);
+  cursor: default;
 }
-
-.reset-button { background: #303846; }
 
 .result-screen {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: minmax(0, 1fr) minmax(92px, auto);
   gap: 8px;
-}
-
-.result-header h1 {
-  margin: 0;
-  text-align: center;
-  font-size: clamp(25px, 3.4vw, 40px);
 }
 
 .result-grid {
@@ -219,71 +314,74 @@ button {
   gap: 10px;
 }
 
-.personal-panel, .timeline-panel {
+.personal-panel,
+.timeline-panel {
   min-height: 0;
-  padding: 10px;
+  padding: 8px 9px;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--panel);
 }
 
-.personal-panel h2, .timeline-panel h2 {
-  margin: 0 0 8px;
+.personal-panel h2,
+.timeline-panel h2 {
+  margin: 0 0 5px;
   color: var(--muted);
   text-align: center;
-  font-size: clamp(15px, 1.8vw, 22px);
+  font-size: clamp(14px, 1.65vw, 20px);
 }
 
 .personal-actions {
-  height: calc(100% - 30px);
+  height: calc(100% - 25px);
   display: grid;
   grid-auto-rows: 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 
 .action-card {
   min-height: 0;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 13px;
   background: var(--panel-2);
   display: grid;
-  grid-template-columns: minmax(74px, .7fr) 1.3fr;
+  grid-template-columns: minmax(70px, .7fr) 1.3fr;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
+  gap: 8px;
+  padding: 7px 9px;
 }
 
 .action-icon-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 6px;
   color: var(--muted);
   font-weight: 800;
 }
 
 .action-icon {
-  width: min(11vh, 82px);
-  height: min(11vh, 82px);
+  width: min(8.6vh, 70px);
+  height: min(8.6vh, 70px);
   object-fit: contain;
 }
 
-.action-name { font-size: clamp(14px, 1.5vw, 19px); }
+.action-name { font-size: clamp(13px, 1.35vw, 18px); }
+
 .action-result {
   text-align: center;
-  font-size: clamp(28px, 4.1vw, 52px);
+  font-size: clamp(25px, 3.7vw, 46px);
   font-weight: 950;
 }
 
 .timeline {
-  height: calc(100% - 30px);
+  height: calc(100% - 25px);
   margin: 0;
   padding: 0;
   list-style: none;
   counter-reset: timeline;
   display: grid;
   grid-template-rows: repeat(4, 1fr);
-  gap: 4px;
+  gap: 3px;
 }
 
 .timeline-item {
@@ -291,61 +389,295 @@ button {
   min-height: 0;
   position: relative;
   border: 1px solid var(--border);
-  border-radius: 13px;
+  border-radius: 12px;
   background: var(--panel-2);
   display: grid;
-  grid-template-columns: 44px minmax(82px, .8fr) 1.3fr;
+  grid-template-columns: 38px minmax(78px, .8fr) 1.3fr;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+  gap: 6px;
+  padding: 4px 8px;
 }
 
 .timeline-item::before {
   content: counter(timeline);
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: rgba(241, 199, 91, .16);
+  background: var(--accent-soft);
   color: var(--accent);
   display: grid;
   place-items: center;
   font-weight: 950;
-  font-size: 20px;
+  font-size: 17px;
 }
 
 .timeline-item:not(:last-child)::after {
   content: "↓";
   position: absolute;
-  left: 17px;
-  bottom: -13px;
+  left: 14px;
+  bottom: -11px;
   z-index: 2;
   color: var(--accent);
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 900;
 }
 
 .timeline-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   color: var(--muted);
-  font-size: clamp(15px, 1.8vw, 22px);
+  font-size: clamp(14px, 1.65vw, 20px);
   font-weight: 850;
 }
 
 .timeline-label img {
-  width: min(7vh, 50px);
-  height: min(7vh, 50px);
+  width: min(5.8vh, 44px);
+  height: min(5.8vh, 44px);
   object-fit: contain;
 }
 
 .timeline-result {
   text-align: center;
-  font-size: clamp(25px, 3.5vw, 46px);
+  font-size: clamp(23px, 3.15vw, 42px);
   font-weight: 950;
 }
 
+.magic-charge-panel {
+  min-height: 92px;
+  display: grid;
+  grid-template-columns: minmax(125px, .75fr) minmax(125px, .75fr) minmax(260px, 1.5fr);
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(94, 215, 193, .38);
+  border-radius: 16px;
+  background: rgba(94, 215, 193, .035);
+}
+
+.magic-toggle-block {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 4px;
+}
+
+.magic-charge-label,
+.magic-charge-title {
+  color: var(--muted);
+  text-align: center;
+  font-size: clamp(12px, 1.35vw, 17px);
+  font-weight: 900;
+}
+
+.magic-toggle-button {
+  min-width: 0;
+  min-height: 54px;
+  border: 2px solid var(--interactive);
+  border-radius: 13px;
+  background: var(--interactive-soft);
+  color: #dffcf6;
+  font-size: clamp(20px, 2.7vw, 34px);
+  font-weight: 950;
+  box-shadow: inset 0 0 0 1px rgba(94, 215, 193, .12);
+}
+
+.magic-toggle-button[aria-pressed="true"] {
+  background: rgba(94, 215, 193, .28);
+  box-shadow: inset 0 0 0 2px rgba(94, 215, 193, .36), 0 0 18px rgba(94, 215, 193, .12);
+}
+
+.magic-out-block {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr 1fr;
+  align-items: center;
+  padding: 3px 10px 5px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--panel);
+}
+
+.magic-out-row {
+  display: grid;
+  grid-template-columns: 3.5em minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  font-size: clamp(17px, 2.2vw, 29px);
+  line-height: 1.05;
+}
+
+.magic-out-row strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.magic-out-truth {
+  color: var(--muted);
+  font-weight: 900;
+  text-align: right;
+}
+
 .missing { color: var(--danger); }
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding:
+    max(16px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+  background: rgba(3, 6, 10, .76);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.settings-panel {
+  width: min(720px, 94vw);
+  max-height: min(620px, 92dvh);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 20px;
+  background: #181e28;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .48);
+  padding: 16px;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: clamp(23px, 3vw, 32px);
+}
+
+.settings-close-button {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #2b3340;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.settings-form {
+  display: grid;
+  gap: 8px;
+}
+
+.setting-row {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #202733;
+}
+
+.setting-row > span:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.setting-row strong {
+  font-size: 16px;
+}
+
+.setting-row small,
+.settings-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.setting-control {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+}
+
+.setting-control input[type="number"] {
+  width: 92px;
+  min-height: 42px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #11161e;
+  color: var(--text);
+  text-align: right;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.setting-row-toggle {
+  cursor: pointer;
+}
+
+.toggle-input {
+  width: 26px;
+  height: 26px;
+  accent-color: var(--accent);
+}
+
+.settings-note {
+  margin: 1px 4px 3px;
+}
+
+.settings-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.secondary-button,
+.save-settings-button {
+  min-height: 46px;
+  border-radius: 13px;
+  font-weight: 900;
+}
+
+.secondary-button { background: #303846; }
+.save-settings-button { background: var(--accent); color: #171a20; }
+
+.app-version {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+  color: #7f8999;
+  font-size: 11px;
+}
+
+.copyright-notice {
+  position: fixed;
+  left: 50%;
+  bottom: max(3px, env(safe-area-inset-bottom));
+  z-index: 5;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, .34);
+  font-size: 9px;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
 
 .portrait-warning { display: none; }
 
@@ -361,726 +693,100 @@ button {
     padding: 24px;
     font-size: 22px;
   }
-  .rotate-mark { font-size: 54px; margin-bottom: 10px; }
-}
 
-@media (max-height: 430px) {
-  .phase-header { min-height: 44px; }
-  .phase-footer, .result-footer { min-height: 42px; }
-  .complete-button, .reset-button { min-height: 40px; }
-  .quadrant { padding: 5px 8px 7px; }
-  .choice-button { border-radius: 11px; }
-}
-
-/* --------------------------------------------------------------------------
-   Responsive refinements
-   - 端末名ではなく実際の表示領域(vw / dvh)で調整する
-   - 3択の「加速度」は改行させず、アイコン側を含めて幅に収める
-   - 結果画面下部にマジックチャージ記録欄を追加する
-   -------------------------------------------------------------------------- */
-
-.choice-button {
-  overflow: hidden;
-}
-
-.choice-button > span {
-  min-width: 0;
-  white-space: nowrap;
-  word-break: keep-all;
-  overflow-wrap: normal;
-  flex: 0 0 auto;
-}
-
-.choice-button img {
-  flex: 0 1 auto;
-}
-
-.three-col {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.three-col .choice-button {
-  gap: 4px;
-  padding: 4px;
-  font-size: clamp(16px, min(4.5dvh, 2.2vw), 28px);
-}
-
-.three-col .choice-button img {
-  width: clamp(28px, min(6dvh, 3vw), 50px);
-  height: clamp(28px, min(6dvh, 3vw), 50px);
-  flex-shrink: 1;
-}
-
-/* 3択は日本語ラベルを必ず横1行で保持する */
-.three-col .choice-button {
-  flex-wrap: nowrap;
-}
-
-.three-col .choice-button > span {
-  white-space: nowrap !important;
-  word-break: keep-all !important;
-  overflow-wrap: normal !important;
-  writing-mode: horizontal-tb !important;
-  line-height: 1;
-}
-
-.three-col .choice-button > .compact-label {
-  font-size: .82em;
-  letter-spacing: -.04em;
-  flex-shrink: 0;
-}
-
-/* 著作権表記を画面内に固定し、その分だけ操作領域を確保する */
-.app-shell {
-  padding-bottom: max(28px, calc(env(safe-area-inset-bottom) + 24px));
-}
-
-.copyright-notice {
-  position: fixed;
-  z-index: 50;
-  left: 50%;
-  bottom: max(3px, env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  max-width: calc(100vw - 24px);
-  color: rgba(174, 183, 199, .72);
-  font-size: clamp(8px, 1vw, 11px);
-  font-weight: 700;
-  letter-spacing: .04em;
-  line-height: 1;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-/* 結果画面は、メイン結果 + マジックチャージ + リセットの4段構成 */
-.result-screen {
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
-  gap: clamp(4px, 1dvh, 8px);
-}
-
-.result-header h1 {
-  font-size: clamp(22px, min(3.2vw, 6.5dvh), 36px);
-  line-height: 1.05;
-}
-
-.result-grid {
-  gap: clamp(5px, .8vw, 10px);
-}
-
-.personal-panel,
-.timeline-panel {
-  padding: clamp(5px, 1.2dvh, 10px);
-  border-radius: clamp(10px, 1.5vw, 16px);
-}
-
-.personal-panel h2,
-.timeline-panel h2 {
-  margin-bottom: clamp(3px, .8dvh, 8px);
-  font-size: clamp(13px, min(1.7vw, 4dvh), 20px);
-  line-height: 1.05;
-}
-
-.personal-actions,
-.timeline {
-  height: calc(100% - clamp(20px, 4.5dvh, 30px));
-}
-
-.action-card {
-  grid-template-columns: minmax(58px, .72fr) 1.28fr;
-  gap: clamp(4px, .8vw, 10px);
-  padding: clamp(4px, 1.2dvh, 10px);
-  border-radius: clamp(9px, 1.2vw, 14px);
-}
-
-.action-icon-wrap {
-  gap: clamp(3px, .6vw, 7px);
-  min-width: 0;
-}
-
-.action-icon {
-  width: clamp(34px, min(9dvh, 6vw), 70px);
-  height: clamp(34px, min(9dvh, 6vw), 70px);
-  flex: 0 1 auto;
-}
-
-.action-name {
-  font-size: clamp(11px, min(1.35vw, 3.6dvh), 17px);
-  white-space: nowrap;
-}
-
-.action-result {
-  font-size: clamp(22px, min(3.6vw, 8dvh), 44px);
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.timeline {
-  gap: clamp(2px, .6dvh, 4px);
-}
-
-.timeline-item {
-  grid-template-columns: clamp(26px, 3vw, 40px) minmax(64px, .82fr) 1.3fr;
-  gap: clamp(3px, .6vw, 8px);
-  padding: clamp(3px, .8dvh, 6px) clamp(5px, .8vw, 10px);
-  border-radius: clamp(8px, 1.1vw, 13px);
-}
-
-.timeline-item::before {
-  width: clamp(24px, min(3vw, 6dvh), 32px);
-  height: clamp(24px, min(3vw, 6dvh), 32px);
-  font-size: clamp(14px, min(1.6vw, 4dvh), 19px);
-}
-
-.timeline-item:not(:last-child)::after {
-  left: clamp(11px, 1.45vw, 16px);
-  bottom: clamp(-11px, -1.2dvh, -6px);
-  font-size: clamp(15px, min(1.8vw, 4.5dvh), 21px);
-}
-
-.timeline-label {
-  gap: clamp(3px, .6vw, 8px);
-  font-size: clamp(12px, min(1.6vw, 3.8dvh), 20px);
-  min-width: 0;
-  white-space: nowrap;
-}
-
-.timeline-label img {
-  width: clamp(26px, min(6dvh, 4vw), 44px);
-  height: clamp(26px, min(6dvh, 4vw), 44px);
-  flex: 0 1 auto;
-}
-
-.timeline-result {
-  font-size: clamp(20px, min(3vw, 7.5dvh), 40px);
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.magic-charge-panel {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(120px, .78fr) minmax(120px, .78fr) minmax(260px, 1.7fr);
-  align-items: stretch;
-  gap: clamp(5px, .8vw, 10px);
-  padding: clamp(4px, .8dvh, 7px) clamp(6px, 1vw, 10px);
-  border: 1px solid var(--border);
-  border-radius: clamp(10px, 1.3vw, 14px);
-  background: var(--panel);
-}
-
-.magic-toggle-block,
-.magic-out-block {
-  min-width: 0;
-  display: grid;
-  align-items: center;
-}
-
-.magic-toggle-block {
-  grid-template-rows: auto 1fr;
-  gap: clamp(3px, .6dvh, 5px);
-}
-
-.magic-charge-label,
-.magic-charge-title {
-  color: var(--muted);
-  font-size: clamp(12px, min(1.5vw, 3.6dvh), 18px);
-  font-weight: 900;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.magic-toggle-button {
-  min-width: 0;
-  min-height: clamp(34px, 6.2dvh, 44px);
-  border: 1px solid var(--border);
-  border-radius: clamp(8px, 1vw, 11px);
-  background: var(--panel-2);
-  padding: 3px 8px;
-  font-size: clamp(14px, min(1.8vw, 4dvh), 21px);
-  font-weight: 950;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.magic-toggle-button:active {
-  transform: scale(.97);
-}
-
-.magic-toggle-button.selected {
-  border-color: var(--accent);
-  background: rgba(241, 199, 91, .16);
-  box-shadow: inset 0 0 0 1px rgba(241, 199, 91, .32);
-}
-
-.magic-out-block {
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto 1fr 1fr;
-  column-gap: clamp(5px, .7vw, 9px);
-  padding: 2px clamp(4px, .7vw, 8px);
-  border-left: 1px solid var(--border);
-}
-
-.magic-out-block .magic-charge-title {
-  grid-column: 1 / -1;
-}
-
-.magic-out-row {
-  grid-column: 1 / -1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: .15em;
-  font-size: clamp(13px, min(1.7vw, 3.8dvh), 20px);
-  line-height: 1.05;
-  white-space: nowrap;
-}
-
-.magic-out-truth {
-  color: var(--muted);
-  font-weight: 900;
-}
-
-.magic-out-row strong {
-  font-weight: 950;
-}
-
-.result-footer {
-  min-height: clamp(34px, 7dvh, 48px);
-}
-
-.reset-button {
-  min-height: clamp(32px, 6.5dvh, 44px);
-  font-size: clamp(15px, min(2vw, 4.2dvh), 22px);
-}
-
-/* Safariのタブバー等で「横幅は広いが高さが少ない」場合 */
-@media (orientation: landscape) and (max-height: 430px) {
-  .app-shell {
-    padding-top: max(4px, env(safe-area-inset-top));
-    padding-right: max(6px, env(safe-area-inset-right));
-    padding-bottom: max(23px, calc(env(safe-area-inset-bottom) + 19px));
-    padding-left: max(6px, env(safe-area-inset-left));
-  }
-
-  .input-screen,
-  .result-screen {
-    gap: 4px;
-  }
-
-  .phase-header {
-    min-height: 36px;
-    gap: 12px;
-  }
-
-  .phase-title {
-    font-size: clamp(22px, 8dvh, 32px);
-  }
-
-  .countdown {
-    font-size: clamp(13px, 4.5dvh, 18px);
-  }
-
-  .quadrants {
-    gap: 5px;
-  }
-
-  .quadrant {
-    gap: 3px;
-    padding: 3px 5px 5px;
-    border-radius: 11px;
-  }
-
-  .quadrant h2 {
-    font-size: clamp(12px, 4dvh, 16px);
-    line-height: 1;
-  }
-
-  .button-row {
-    gap: 5px;
-  }
-
-  .choice-button {
-    border-radius: 9px;
-    padding: 3px;
-    gap: 4px;
-    font-size: clamp(16px, 7dvh, 24px);
-  }
-
-  .choice-button img {
-    width: clamp(26px, 11dvh, 42px);
-    height: clamp(26px, 11dvh, 42px);
-  }
-
-  .three-col .choice-button {
-    font-size: clamp(14px, 5.4dvh, 19px);
-  }
-
-  .three-col .choice-button img {
-    width: clamp(24px, 9dvh, 34px);
-    height: clamp(24px, 9dvh, 34px);
-  }
-
-  .phase-footer {
-    min-height: 32px;
-  }
-
-  .complete-button {
-    min-height: 30px;
-    font-size: clamp(14px, 4.8dvh, 18px);
-  }
-
-  .result-header h1 {
-    font-size: clamp(19px, 6.5dvh, 26px);
-  }
-
-  .result-grid {
-    gap: 5px;
-  }
-
-  .personal-panel,
-  .timeline-panel {
-    padding: 4px;
-    border-radius: 10px;
-  }
-
-  .personal-panel h2,
-  .timeline-panel h2 {
-    margin-bottom: 3px;
-    font-size: clamp(12px, 4dvh, 15px);
-  }
-
-  .personal-actions,
-  .timeline {
-    height: calc(100% - 18px);
-    gap: 3px;
-  }
-
-  .action-card {
-    grid-template-columns: minmax(52px, .72fr) 1.28fr;
-    gap: 4px;
-    padding: 3px 5px;
-    border-radius: 8px;
-  }
-
-  .action-icon {
-    width: clamp(28px, 11dvh, 38px);
-    height: clamp(28px, 11dvh, 38px);
-  }
-
-  .action-name {
-    font-size: clamp(10px, 3.5dvh, 13px);
-  }
-
-  .action-result {
-    font-size: clamp(19px, 8dvh, 28px);
-  }
-
-  .timeline-item {
-    grid-template-columns: 26px minmax(58px, .8fr) 1.25fr;
-    gap: 3px;
-    padding: 2px 4px;
-    border-radius: 7px;
-  }
-
-  .timeline-item::before {
-    width: 22px;
-    height: 22px;
-    font-size: 13px;
-  }
-
-  .timeline-item:not(:last-child)::after {
-    left: 10px;
-    bottom: -8px;
-    font-size: 15px;
-  }
-
-  .timeline-label {
-    gap: 3px;
-    font-size: clamp(10px, 3.5dvh, 13px);
-  }
-
-  .timeline-label img {
-    width: clamp(23px, 9dvh, 32px);
-    height: clamp(23px, 9dvh, 32px);
-  }
-
-  .timeline-result {
-    font-size: clamp(18px, 7dvh, 25px);
-  }
-
-  .magic-charge-panel {
-    grid-template-columns: minmax(76px, .72fr) minmax(76px, .72fr) minmax(180px, 1.7fr);
-    gap: 4px;
-    padding: 3px 5px;
-    border-radius: 8px;
-  }
-
-  .magic-charge-title,
-  .magic-charge-label {
-    font-size: clamp(10px, 3.4dvh, 13px);
-  }
-
-  .magic-toggle-block {
-    gap: 2px;
-  }
-
-  .magic-toggle-button {
-    min-height: 27px;
-    padding: 2px 4px;
-    border-radius: 6px;
-    font-size: clamp(11px, 3.6dvh, 14px);
-  }
-
-  .magic-out-block {
-    padding: 1px 3px;
-  }
-
-  .magic-out-row {
-    font-size: clamp(10px, 3.4dvh, 13px);
-  }
-
-  .result-footer {
-    min-height: 28px;
-  }
-
-  .reset-button {
-    min-height: 27px;
-    font-size: clamp(13px, 4dvh, 16px);
-  }
-
-  .copyright-notice {
-    font-size: 8px;
-    bottom: max(2px, env(safe-area-inset-bottom));
+  .rotate-mark {
+    font-size: 54px;
+    margin-bottom: 10px;
   }
 }
 
-/* さらに高さが厳しい横画面ではタイトル部分を省スペース化 */
-@media (orientation: landscape) and (max-height: 350px) {
-  .magic-charge-panel {
-    grid-template-columns: minmax(68px, .68fr) minmax(68px, .68fr) minmax(160px, 1.75fr);
+@media (max-width: 760px) {
+  .app-header {
+    grid-template-columns: auto 1fr auto;
   }
 
-  .magic-charge-title {
-    font-size: 10px;
-  }
-
-  .result-header h1 {
-    font-size: 18px;
-  }
-
-  .personal-panel h2,
-  .timeline-panel h2 {
-    font-size: 11px;
-  }
-
-  .action-result {
-    font-size: 18px;
-  }
-
-  .timeline-result {
-    font-size: 17px;
-  }
-}
-
-/* 加速度だけは3文字分の幅を最優先し、アイコンを少し小さくする */
-.three-col .choice-button[data-value="acceleration"] {
-  gap: 3px;
-}
-
-.three-col .choice-button[data-value="acceleration"] img {
-  width: clamp(24px, min(5.5dvh, 2.6vw), 44px);
-  height: clamp(24px, min(5.5dvh, 2.6vw), 44px);
-}
-
-.three-col .choice-button[data-value="acceleration"] > .compact-label {
-  font-size: clamp(13px, min(1.55vw, 4dvh), 22px);
-  white-space: nowrap !important;
-  word-break: keep-all !important;
-  overflow-wrap: normal !important;
-}
-
-/* --------------------------------------------------------------------------
-   vNext UI refinements
-   - リセットを全画面共通で左上に固定
-   - 結果上段を圧縮し、マジックアウト操作欄を大きく確保
-   - マジックアウト真偽の結果列を揃える
-   - 「加速度」をどの幅でも1行として扱う
-   -------------------------------------------------------------------------- */
-
-.global-reset-button {
-  position: fixed;
-  z-index: 120;
-  top: max(7px, env(safe-area-inset-top));
-  left: max(8px, env(safe-area-inset-left));
-  min-width: clamp(72px, 10vw, 112px);
-  min-height: clamp(34px, 6.2dvh, 44px);
-  padding: 4px 12px;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  background: rgba(48, 56, 70, .94);
-  color: var(--text);
-  font-size: clamp(13px, min(1.5vw, 3.8dvh), 18px);
-  font-weight: 900;
-  line-height: 1;
-  cursor: pointer;
-  backdrop-filter: blur(6px);
-}
-
-.global-reset-button:active {
-  transform: scale(.96);
-}
-
-.phase-header,
-.result-header {
-  padding-inline: clamp(86px, 12vw, 128px);
-}
-
-/* Footer のリセットを廃止したため、結果画面は3段構成。 */
-.result-screen {
-  grid-template-rows: auto minmax(0, 1fr) clamp(92px, 24dvh, 150px);
-}
-
-/* 上段を少し密にして、下のマジックアウト領域へ高さを回す。 */
-.personal-panel,
-.timeline-panel {
-  padding: clamp(4px, .9dvh, 8px);
-}
-
-.personal-panel h2,
-.timeline-panel h2 {
-  margin-bottom: clamp(2px, .5dvh, 5px);
-}
-
-.personal-actions,
-.timeline {
-  height: calc(100% - clamp(18px, 3.8dvh, 26px));
-}
-
-.action-card {
-  padding-block: clamp(3px, .7dvh, 7px);
-}
-
-.timeline-item {
-  padding-block: clamp(2px, .55dvh, 5px);
-}
-
-.magic-charge-panel {
-  min-height: 0;
-  grid-template-columns: minmax(118px, .78fr) minmax(118px, .78fr) minmax(260px, 1.75fr);
-  padding: clamp(7px, 1.4dvh, 12px) clamp(8px, 1.2vw, 14px);
-  gap: clamp(7px, 1vw, 12px);
-}
-
-.magic-toggle-block {
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: clamp(4px, .8dvh, 8px);
-}
-
-.magic-charge-label,
-.magic-charge-title {
-  font-size: clamp(13px, min(1.7vw, 4dvh), 20px);
-}
-
-.magic-toggle-button {
-  min-height: 0;
-  height: 100%;
-  padding: 5px 10px;
-  border-radius: clamp(9px, 1.1vw, 13px);
-  font-size: clamp(18px, min(2.5vw, 6dvh), 30px);
-}
-
-.magic-out-block {
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr 1fr;
-  align-content: stretch;
-  padding: 2px clamp(8px, 1vw, 14px);
-}
-
-.magic-out-row {
-  grid-column: 1;
-  display: grid;
-  grid-template-columns: 2.4em minmax(0, 1fr);
-  align-items: center;
-  justify-content: stretch;
-  gap: .25em;
-  padding-inline: clamp(4px, .6vw, 8px);
-  font-size: clamp(16px, min(2.2vw, 5.2dvh), 27px);
-  text-align: left;
-}
-
-.magic-out-truth {
-  width: auto;
-  text-align: right;
-}
-
-.magic-out-row strong {
-  min-width: 0;
-  text-align: left;
-  white-space: nowrap;
-}
-
-/* 日本語の禁則に依存せず、加速度ラベル自体を縮まない一つの箱として扱う。 */
-.three-col .choice-button[data-value="acceleration"] {
-  gap: 2px;
-  padding-inline: 2px;
-}
-
-.three-col .choice-button[data-value="acceleration"] img {
-  width: clamp(22px, min(5dvh, 2.25vw), 40px);
-  height: clamp(22px, min(5dvh, 2.25vw), 40px);
-  flex: 0 1 auto;
-}
-
-.three-col .choice-button[data-value="acceleration"] > .compact-label {
-  display: inline-block !important;
-  width: max-content !important;
-  max-width: none !important;
-  min-width: max-content !important;
-  flex: none !important;
-  font-size: clamp(12px, min(1.35vw, 3.7dvh), 19px) !important;
-  letter-spacing: -.08em;
-  line-height: 1 !important;
-  white-space: pre !important;
-  word-break: normal !important;
-  overflow-wrap: normal !important;
-  text-wrap: nowrap;
-}
-
-@media (orientation: landscape) and (max-height: 430px) {
   .global-reset-button {
-    top: max(4px, env(safe-area-inset-top));
-    left: max(5px, env(safe-area-inset-left));
-    min-width: 66px;
-    min-height: 29px;
-    padding: 3px 8px;
-    font-size: clamp(11px, 3.5dvh, 14px);
+    min-width: 84px;
+    padding-inline: 12px;
   }
 
-  .phase-header,
-  .result-header {
-    padding-inline: 76px;
+  .header-center { gap: 10px; }
+  .idle-elapsed { min-width: auto; font-size: 11px; }
+  .settings-button { width: 38px; height: 38px; flex-basis: 38px; }
+  .magic-charge-panel { grid-template-columns: .7fr .7fr 1.6fr; }
+  .magic-out-row { grid-template-columns: 2.8em minmax(0, 1fr); }
+}
+
+@media (max-height: 500px) {
+  :root { --header-height: 48px; }
+
+  .app-shell {
+    gap: 6px;
+    padding-top: max(5px, env(safe-area-inset-top));
+    padding-bottom: max(18px, calc(env(safe-area-inset-bottom) + 11px));
   }
+
+  .global-reset-button,
+  .settings-button {
+    min-height: 38px;
+  }
+
+  .global-reset-button { min-height: 38px; }
+  .settings-button { height: 38px; }
+  .phase-footer { min-height: 40px; }
+  .complete-button { min-height: 40px; }
+  .quadrant { padding: 5px 8px 7px; border-radius: 13px; }
+  .choice-button { border-radius: 11px; }
+  .choice-button img { width: min(8.5vh, 54px); height: min(8.5vh, 54px); }
 
   .result-screen {
-    grid-template-rows: auto minmax(0, 1fr) clamp(78px, 25dvh, 104px);
+    grid-template-rows: minmax(0, 1fr) minmax(78px, auto);
+    gap: 6px;
   }
+
+  .result-grid { gap: 7px; }
+  .personal-panel, .timeline-panel { padding: 5px 7px; border-radius: 13px; }
+  .personal-panel h2, .timeline-panel h2 { margin-bottom: 3px; font-size: 13px; }
+  .personal-actions, .timeline { height: calc(100% - 19px); }
+  .action-card { padding: 4px 6px; gap: 5px; border-radius: 10px; }
+  .action-icon { width: min(7vh, 46px); height: min(7vh, 46px); }
+  .action-name { font-size: 11px; }
+  .action-result { font-size: clamp(21px, 3.3vw, 38px); }
+  .timeline-item { grid-template-columns: 31px minmax(66px, .8fr) 1.3fr; padding: 2px 6px; border-radius: 10px; }
+  .timeline-item::before { width: 25px; height: 25px; font-size: 14px; }
+  .timeline-item:not(:last-child)::after { left: 11px; bottom: -9px; font-size: 16px; }
+  .timeline-label { font-size: 12px; gap: 5px; }
+  .timeline-label img { width: min(4.8vh, 32px); height: min(4.8vh, 32px); }
+  .timeline-result { font-size: clamp(20px, 2.8vw, 34px); }
 
   .magic-charge-panel {
-    grid-template-columns: minmax(82px, .72fr) minmax(82px, .72fr) minmax(190px, 1.8fr);
+    min-height: 78px;
     padding: 4px 6px;
-    gap: 5px;
+    gap: 6px;
+    border-radius: 13px;
   }
 
-  .magic-toggle-button {
-    font-size: clamp(14px, 5dvh, 19px);
+  .magic-charge-label,
+  .magic-charge-title { font-size: 11px; }
+  .magic-toggle-block { gap: 2px; }
+  .magic-toggle-button { min-height: 46px; border-radius: 10px; font-size: clamp(18px, 2.5vw, 28px); }
+  .magic-out-block { padding: 1px 7px 3px; border-radius: 10px; }
+  .magic-out-row { font-size: clamp(15px, 2vw, 24px); }
+
+  .settings-panel {
+    width: min(700px, 96vw);
+    max-height: 95dvh;
+    padding: 10px 12px;
   }
 
-  .magic-out-row {
-    font-size: clamp(12px, 4.1dvh, 16px);
-  }
-
-  .three-col .choice-button[data-value="acceleration"] > .compact-label {
-    font-size: clamp(11px, 3.8dvh, 15px) !important;
-    letter-spacing: -.1em;
-  }
+  .settings-header { margin-bottom: 5px; }
+  .settings-header h2 { font-size: 22px; }
+  .settings-close-button { width: 36px; height: 36px; font-size: 24px; }
+  .settings-form { gap: 5px; }
+  .setting-row { min-height: 50px; padding: 6px 9px; }
+  .setting-row strong { font-size: 14px; }
+  .setting-row small, .settings-note { font-size: 10px; }
+  .setting-control input[type="number"] { min-height: 36px; width: 82px; font-size: 16px; }
+  .secondary-button, .save-settings-button { min-height: 38px; }
+  .app-version { margin-top: 7px; padding-top: 6px; font-size: 9px; }
 }

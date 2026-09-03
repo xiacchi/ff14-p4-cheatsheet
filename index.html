@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#101319">
   <title>絶妖星乱舞 P4 カンペ</title>
-  <link rel="stylesheet" href="./css/style.css?v=20260902-1530">
+  <link rel="stylesheet" href="./css/style.css?v=20260903-1517">
 </head>
 <body>
   <div id="portraitWarning" class="portrait-warning" aria-hidden="true">
@@ -15,15 +15,22 @@
     </div>
   </div>
 
-  <main id="app" class="app-shell">
-    <button id="resetButton" class="global-reset-button" type="button">リセット</button>
+  <main id="app" class="app-shell theme-odd">
+    <header class="app-header">
+      <button id="resetButton" class="global-reset-button" type="button">リセット</button>
 
-    <section id="inputScreen" class="screen input-screen">
-      <header class="phase-header">
+      <div class="header-center">
         <div id="phaseTitle" class="phase-title">GC1</div>
         <div id="countdown" class="countdown">入力待ち</div>
-      </header>
+      </div>
 
+      <div class="header-tools">
+        <div id="idleElapsed" class="idle-elapsed" aria-live="polite">操作なし: 0秒</div>
+        <button id="settingsButton" class="settings-button" type="button" aria-label="設定を開く">⚙</button>
+      </div>
+    </header>
+
+    <section id="inputScreen" class="screen input-screen">
       <div class="quadrants">
         <section class="quadrant chaos truth-area">
           <h2>カオス</h2>
@@ -92,10 +99,6 @@
     </section>
 
     <section id="resultScreen" class="screen result-screen" hidden>
-      <header class="result-header">
-        <h1>処理内容</h1>
-      </header>
-
       <div class="result-grid">
         <section class="personal-panel">
           <h2>個人デバフの処理</h2>
@@ -123,13 +126,67 @@
           <div class="magic-out-row"><span class="magic-out-truth">偽：</span><strong id="magicOutFalse">全部踏む</strong></div>
         </div>
       </section>
-
     </section>
   </main>
 
+  <div id="settingsOverlay" class="settings-overlay" hidden>
+    <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="settings-header">
+        <h2 id="settingsTitle">設定</h2>
+        <button id="settingsCloseButton" class="settings-close-button" type="button" aria-label="設定を閉じる">×</button>
+      </div>
+
+      <form id="settingsForm" class="settings-form">
+        <label class="setting-row">
+          <span>
+            <strong>GC1 自動切替</strong>
+            <small>最初の手動入力から次画面へ進むまで</small>
+          </span>
+          <span class="setting-control"><input id="gc1SecondsInput" type="number" min="1" max="60" step="1" inputmode="numeric"> 秒</span>
+        </label>
+
+        <label class="setting-row">
+          <span>
+            <strong>GC2 自動切替</strong>
+            <small>最初の手動入力から処理内容へ進むまで</small>
+          </span>
+          <span class="setting-control"><input id="gc2SecondsInput" type="number" min="1" max="60" step="1" inputmode="numeric"> 秒</span>
+        </label>
+
+        <label class="setting-row setting-row-toggle">
+          <span>
+            <strong>未操作で自動リセット</strong>
+            <small>入力内容とマジックアウト記録をGC1初期状態へ戻す</small>
+          </span>
+          <input id="idleResetEnabledInput" class="toggle-input" type="checkbox">
+        </label>
+
+        <label class="setting-row" id="idleResetSecondsRow">
+          <span>
+            <strong>未操作リセット時間</strong>
+            <small>既定値は300秒（5分）</small>
+          </span>
+          <span class="setting-control"><input id="idleResetSecondsInput" type="number" min="30" max="3600" step="10" inputmode="numeric"> 秒</span>
+        </label>
+
+        <p class="settings-note">設定値はこの端末の localStorage にのみ保存します。進行中のGCカウントダウンは変更せず、次回開始時から新しい値を使用します。</p>
+
+        <div class="settings-actions">
+          <button id="restoreDefaultsButton" class="secondary-button" type="button">既定値に戻す</button>
+          <button class="save-settings-button" type="submit">保存</button>
+        </div>
+      </form>
+
+      <div class="app-version">
+        <span id="appVersion">Version 2026.09.03-r1</span>
+        <span id="appUpdatedAt">Updated 2026-09-03 15:17 JST</span>
+      </div>
+    </section>
+  </div>
+
   <div class="copyright-notice" aria-label="Copyright">FINAL FANTASY XIV © SQUARE ENIX</div>
 
-  <script src="./js/rules.js?v=20260902-1530"></script>
-  <script src="./js/app.js?v=20260902-1530"></script>
+  <script src="./js/rules.js?v=20260903-1517"></script>
+  <script src="./js/app.js?v=20260903-1517"></script>
 </body>
 </html>

@@ -1,9 +1,19 @@
 (function () {
-  const CONFIG = {
+  'use strict';
+
+  const APP_INFO = {
+    version: '2026.09.03-r1',
+    updatedAt: '2026-09-03 15:17 JST',
+  };
+
+  const STORAGE_KEY = 'ff14P4Cheatsheet.settings.v1';
+
+  const DEFAULT_SETTINGS = Object.freeze({
     gc1Seconds: 20,
     gc2Seconds: 20,
+    idleResetEnabled: true,
     idleResetSeconds: 300,
-  };
+  });
 
   const ASSETS = {
     thunder: './assets/icons/exdeath-thunder.png',
@@ -33,79 +43,130 @@
     timerId: null,
     deadline: null,
     timerStarted: false,
-    idleTimerId: null,
-    lastActivityAt: Date.now(),
+    settings: loadSettings(),
+    lastInteractionAt: Date.now(),
+    idleTickerId: null,
+    magic: {
+      line: false,
+      fan: false,
+    },
     gc2Derived: {
       chaosType: false,
       exdeathDebuff: false,
       disableAcceleration: false,
     },
-    magicCharge: {
-      line: false,
-      fan: false,
-    },
   };
 
   const els = {
+    app: document.getElementById('app'),
     inputScreen: document.getElementById('inputScreen'),
     resultScreen: document.getElementById('resultScreen'),
     phaseTitle: document.getElementById('phaseTitle'),
     countdown: document.getElementById('countdown'),
     completeButton: document.getElementById('completeButton'),
     resetButton: document.getElementById('resetButton'),
+    idleElapsed: document.getElementById('idleElapsed'),
     personalActions: document.getElementById('personalActions'),
     timeline: document.getElementById('timeline'),
     magicLineButton: document.getElementById('magicLineButton'),
     magicFanButton: document.getElementById('magicFanButton'),
     magicOutTrue: document.getElementById('magicOutTrue'),
     magicOutFalse: document.getElementById('magicOutFalse'),
+    settingsButton: document.getElementById('settingsButton'),
+    settingsOverlay: document.getElementById('settingsOverlay'),
+    settingsCloseButton: document.getElementById('settingsCloseButton'),
+    settingsForm: document.getElementById('settingsForm'),
+    gc1SecondsInput: document.getElementById('gc1SecondsInput'),
+    gc2SecondsInput: document.getElementById('gc2SecondsInput'),
+    idleResetEnabledInput: document.getElementById('idleResetEnabledInput'),
+    idleResetSecondsInput: document.getElementById('idleResetSecondsInput'),
+    idleResetSecondsRow: document.getElementById('idleResetSecondsRow'),
+    restoreDefaultsButton: document.getElementById('restoreDefaultsButton'),
+    appVersion: document.getElementById('appVersion'),
+    appUpdatedAt: document.getElementById('appUpdatedAt'),
   };
 
   document.querySelectorAll('.choice-button').forEach((button) => {
     button.addEventListener('click', () => selectChoice(button));
   });
 
-  document.querySelectorAll('.magic-toggle-button').forEach((button) => {
-    button.addEventListener('click', () => toggleMagicCharge(button.dataset.magicToggle));
-  });
-
   els.completeButton.addEventListener('click', finalizePhase);
-  els.resetButton.addEventListener('click', resetAll);
+  els.resetButton.addEventListener('click', () => resetAll({ fromIdle: false }));
+  els.magicLineButton.addEventListener('click', () => toggleMagic('line'));
+  els.magicFanButton.addEventListener('click', () => toggleMagic('fan'));
 
-  // 戦闘終了後などに古い入力が残らないよう、最後の操作から一定時間で初期化する。
-  ['pointerdown', 'keydown'].forEach((eventName) => {
-    document.addEventListener(eventName, restartIdleResetTimer, { passive: true });
+  els.settingsButton.addEventListener('click', openSettings);
+  els.settingsCloseButton.addEventListener('click', closeSettings);
+  els.settingsOverlay.addEventListener('click', (event) => {
+    if (event.target === els.settingsOverlay) closeSettings();
   });
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) return;
+  els.settingsForm.addEventListener('submit', saveSettingsFromForm);
+  els.restoreDefaultsButton.addEventListener('click', () => fillSettingsForm(DEFAULT_SETTINGS));
+  els.idleResetEnabledInput.addEventListener('change', refreshIdleSettingAvailability);
 
-    const idleMs = Date.now() - state.lastActivityAt;
-    if (idleMs >= CONFIG.idleResetSeconds * 1000) {
-      resetAll({ restartIdleTimer: false });
-    } else {
-      scheduleIdleReset();
-    }
-  });
+  document.addEventListener('pointerdown', markInteraction, { capture: true, passive: true });
+  document.addEventListener('keydown', (event) => {
+    markInteraction();
+    if (event.key === 'Escape' && !els.settingsOverlay.hidden) closeSettings();
+  }, { capture: true });
 
-  function scheduleIdleReset() {
-    if (state.idleTimerId) window.clearTimeout(state.idleTimerId);
-
-    const elapsedMs = Date.now() - state.lastActivityAt;
-    const remainingMs = Math.max(0, CONFIG.idleResetSeconds * 1000 - elapsedMs);
-
-    state.idleTimerId = window.setTimeout(() => {
-      const currentIdleMs = Date.now() - state.lastActivityAt;
-      if (currentIdleMs >= CONFIG.idleResetSeconds * 1000) {
-        resetAll({ restartIdleTimer: false });
-      } else {
-        scheduleIdleReset();
-      }
-    }, remainingMs);
+  function boundedInt(value, fallback, min, max) {
+    const number = Number.parseInt(value, 10);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.min(max, Math.max(min, number));
   }
 
-  function restartIdleResetTimer() {
-    state.lastActivityAt = Date.now();
-    scheduleIdleReset();
+  function normalizeSettings(raw) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    return {
+      gc1Seconds: boundedInt(source.gc1Seconds, DEFAULT_SETTINGS.gc1Seconds, 1, 60),
+      gc2Seconds: boundedInt(source.gc2Seconds, DEFAULT_SETTINGS.gc2Seconds, 1, 60),
+      idleResetEnabled: typeof source.idleResetEnabled === 'boolean'
+        ? source.idleResetEnabled
+        : DEFAULT_SETTINGS.idleResetEnabled,
+      idleResetSeconds: boundedInt(source.idleResetSeconds, DEFAULT_SETTINGS.idleResetSeconds, 30, 3600),
+    };
+  }
+
+  function loadSettings() {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { ...DEFAULT_SETTINGS };
+      return normalizeSettings(JSON.parse(raw));
+    } catch (error) {
+      return { ...DEFAULT_SETTINGS };
+    }
+  }
+
+  function persistSettings() {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.settings));
+    } catch (error) {
+      // localStorageが利用不可でも、現在のタブでは設定値をそのまま使用する。
+    }
+  }
+
+  function markInteraction() {
+    state.lastInteractionAt = Date.now();
+    updateIdleElapsed();
+  }
+
+  function updateIdleElapsed() {
+    const elapsedSeconds = Math.max(0, Math.floor((Date.now() - state.lastInteractionAt) / 1000));
+    els.idleElapsed.textContent = `操作なし: ${elapsedSeconds}秒`;
+
+    if (
+      state.settings.idleResetEnabled
+      && elapsedSeconds >= state.settings.idleResetSeconds
+    ) {
+      resetAll({ fromIdle: true });
+    }
+  }
+
+  function startIdleTicker() {
+    if (state.idleTickerId) window.clearInterval(state.idleTickerId);
+    state.idleTickerId = window.setInterval(updateIdleElapsed, 1000);
+    updateIdleElapsed();
   }
 
   function currentRecord() {
@@ -125,45 +186,6 @@
     refreshGroup(group);
 
     if (!state.timerStarted) startTimer();
-  }
-
-
-  function toggleMagicCharge(key) {
-    state.magicCharge[key] = !state.magicCharge[key];
-    refreshMagicCharge();
-  }
-
-  function magicOutActions() {
-    const { line, fan } = state.magicCharge;
-
-    if (!line && !fan) {
-      return { trueAction: '全部踏まない', falseAction: '全部踏む' };
-    }
-    if (line && !fan) {
-      return { trueAction: '直線踏む', falseAction: '扇踏む' };
-    }
-    if (!line && fan) {
-      return { trueAction: '扇踏む', falseAction: '直線踏む' };
-    }
-    return { trueAction: '全部踏む', falseAction: '全部踏まない' };
-  }
-
-  function refreshMagicCharge() {
-    const buttons = {
-      line: els.magicLineButton,
-      fan: els.magicFanButton,
-    };
-
-    Object.entries(buttons).forEach(([key, button]) => {
-      const active = state.magicCharge[key];
-      button.textContent = active ? '踏む' : '踏まない';
-      button.classList.toggle('selected', active);
-      button.setAttribute('aria-pressed', String(active));
-    });
-
-    const actions = magicOutActions();
-    els.magicOutTrue.textContent = actions.trueAction;
-    els.magicOutFalse.textContent = actions.falseAction;
   }
 
   function normalizeValue(group, value) {
@@ -229,7 +251,7 @@
   }
 
   function phaseDurationSeconds() {
-    return state.phase === 1 ? CONFIG.gc1Seconds : CONFIG.gc2Seconds;
+    return state.phase === 1 ? state.settings.gc1Seconds : state.settings.gc2Seconds;
   }
 
   function startTimer() {
@@ -268,7 +290,6 @@
       disableAcceleration: false,
     };
 
-    // カオスの炎/水は、GC1とGC2で必ず片方ずつ。
     if (gc1.chaosType === 'fire') {
       gc2.chaosType = 'water';
       state.gc2Derived.chaosType = true;
@@ -277,12 +298,9 @@
       state.gc2Derived.chaosType = true;
     }
 
-    // 個人デバフは、2回のGCを通して「水雷系」と「加速度系」を1回ずつ処理する。
-    // GC1で雷/水ならGC2は加速度に確定。
     if (gc1.exdeathDebuff === 'thunder' || gc1.exdeathDebuff === 'water') {
       gc2.exdeathDebuff = 'acceleration';
       state.gc2Derived.exdeathDebuff = true;
-    // GC1で加速度ならGC2は雷/水のどちらか。加速度だけ再選択不可にする。
     } else if (gc1.exdeathDebuff === 'acceleration') {
       state.gc2Derived.disableAcceleration = true;
     }
@@ -301,8 +319,15 @@
     showResults();
   }
 
+  function applyTheme(theme) {
+    els.app.classList.toggle('theme-even', theme === 'even');
+    els.app.classList.toggle('theme-odd', theme !== 'even');
+  }
+
   function renderPhase() {
+    applyTheme(state.phase === 2 ? 'even' : 'odd');
     els.phaseTitle.textContent = `GC${state.phase}`;
+    els.countdown.hidden = false;
     els.countdown.textContent = '入力待ち';
     els.countdown.classList.remove('urgent');
     els.completeButton.textContent = `GC${state.phase}完了`;
@@ -316,11 +341,14 @@
 
   function showResults() {
     clearTimer();
+    applyTheme('odd');
     els.inputScreen.hidden = true;
     els.resultScreen.hidden = false;
+    els.phaseTitle.textContent = '処理内容';
+    els.countdown.hidden = true;
     renderPersonalActions();
     renderTimeline();
-    refreshMagicCharge();
+    renderMagic();
   }
 
   function renderPersonalActions() {
@@ -389,28 +417,100 @@
     });
   }
 
-  function resetAll(options = {}) {
-    const { restartIdleTimer = true } = options;
+  function toggleMagic(kind) {
+    state.magic[kind] = !state.magic[kind];
+    renderMagic();
+  }
+
+  function decodeMagic(line, fan) {
+    if (!line && !fan) return { truth: '全部踏まない', falsehood: '全部踏む' };
+    if (line && !fan) return { truth: '直線踏む', falsehood: '扇踏む' };
+    if (!line && fan) return { truth: '扇踏む', falsehood: '直線踏む' };
+    return { truth: '全部踏む', falsehood: '全部踏まない' };
+  }
+
+  function renderMagic() {
+    els.magicLineButton.textContent = state.magic.line ? '踏む' : '踏まない';
+    els.magicFanButton.textContent = state.magic.fan ? '踏む' : '踏まない';
+    els.magicLineButton.setAttribute('aria-pressed', String(state.magic.line));
+    els.magicFanButton.setAttribute('aria-pressed', String(state.magic.fan));
+
+    const decoded = decodeMagic(state.magic.line, state.magic.fan);
+    els.magicOutTrue.textContent = decoded.truth;
+    els.magicOutFalse.textContent = decoded.falsehood;
+  }
+
+  function openSettings() {
+    fillSettingsForm(state.settings);
+    els.settingsOverlay.hidden = false;
+    window.setTimeout(() => els.gc1SecondsInput.focus(), 0);
+  }
+
+  function closeSettings() {
+    els.settingsOverlay.hidden = true;
+    els.settingsButton.focus();
+  }
+
+  function fillSettingsForm(settings) {
+    els.gc1SecondsInput.value = settings.gc1Seconds;
+    els.gc2SecondsInput.value = settings.gc2Seconds;
+    els.idleResetEnabledInput.checked = settings.idleResetEnabled;
+    els.idleResetSecondsInput.value = settings.idleResetSeconds;
+    refreshIdleSettingAvailability();
+  }
+
+  function refreshIdleSettingAvailability() {
+    const enabled = els.idleResetEnabledInput.checked;
+    els.idleResetSecondsInput.disabled = !enabled;
+    els.idleResetSecondsRow.style.opacity = enabled ? '1' : '.5';
+  }
+
+  function saveSettingsFromForm(event) {
+    event.preventDefault();
+
+    state.settings = normalizeSettings({
+      gc1Seconds: els.gc1SecondsInput.value,
+      gc2Seconds: els.gc2SecondsInput.value,
+      idleResetEnabled: els.idleResetEnabledInput.checked,
+      idleResetSeconds: els.idleResetSecondsInput.value,
+    });
+
+    persistSettings();
+    fillSettingsForm(state.settings);
+    closeSettings();
+  }
+
+  function resetAll({ fromIdle }) {
     clearTimer();
     state.phase = 1;
     state.records = [blankRecord(), blankRecord()];
+    state.magic = { line: false, fan: false };
     state.gc2Derived = {
       chaosType: false,
       exdeathDebuff: false,
       disableAcceleration: false,
     };
-    state.magicCharge = {
-      line: false,
-      fan: false,
-    };
-    refreshMagicCharge();
+
+    state.lastInteractionAt = Date.now();
+
+    if (fromIdle) {
+      els.settingsOverlay.hidden = true;
+    }
+
     els.resultScreen.hidden = true;
     els.inputScreen.hidden = false;
+    renderMagic();
     renderPhase();
-
-    if (restartIdleTimer) restartIdleResetTimer();
+    updateIdleElapsed();
   }
 
+  function renderAppInfo() {
+    els.appVersion.textContent = `Version ${APP_INFO.version}`;
+    els.appUpdatedAt.textContent = `Updated ${APP_INFO.updatedAt}`;
+  }
+
+  renderAppInfo();
+  renderMagic();
   renderPhase();
-  restartIdleResetTimer();
+  startIdleTicker();
 }());
