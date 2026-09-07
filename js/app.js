@@ -9,8 +9,8 @@
   const STORAGE_KEY = 'ff14P4Cheatsheet.settings.v1';
 
   const DEFAULT_SETTINGS = Object.freeze({
-    gc1Seconds: 10,
-    gc2Seconds: 10,
+    gc1Seconds: 15,
+    gc2Seconds: 15,
     idleResetEnabled: true,
     idleResetSeconds: 300,
     wakeLockEnabled: true,
