@@ -2,17 +2,19 @@
   'use strict';
 
   const APP_INFO = {
-    version: '2026.09.03-r1',
-    updatedAt: '2026-09-03 15:17 JST',
+    version: '2026.09.07-r4',
+    updatedAt: '2026-09-07 23:00 JST',
   };
 
   const STORAGE_KEY = 'ff14P4Cheatsheet.settings.v1';
 
   const DEFAULT_SETTINGS = Object.freeze({
-    gc1Seconds: 20,
-    gc2Seconds: 20,
+    gc1Seconds: 10,
+    gc2Seconds: 10,
     idleResetEnabled: true,
     idleResetSeconds: 300,
+    wakeLockEnabled: true,
+    wakeLockMinutes: 30,
   });
 
   const ASSETS = {
@@ -46,6 +48,9 @@
     settings: loadSettings(),
     lastInteractionAt: Date.now(),
     idleTickerId: null,
+    idleResetHandled: false,
+    wakeLock: null,
+    wakeLockRequestPending: false,
     magic: {
       line: false,
       fan: false,
@@ -70,8 +75,6 @@
     timeline: document.getElementById('timeline'),
     magicLineButton: document.getElementById('magicLineButton'),
     magicFanButton: document.getElementById('magicFanButton'),
-    magicOutTrue: document.getElementById('magicOutTrue'),
-    magicOutFalse: document.getElementById('magicOutFalse'),
     settingsButton: document.getElementById('settingsButton'),
     settingsOverlay: document.getElementById('settingsOverlay'),
     settingsCloseButton: document.getElementById('settingsCloseButton'),
@@ -81,6 +84,9 @@
     idleResetEnabledInput: document.getElementById('idleResetEnabledInput'),
     idleResetSecondsInput: document.getElementById('idleResetSecondsInput'),
     idleResetSecondsRow: document.getElementById('idleResetSecondsRow'),
+    wakeLockEnabledInput: document.getElementById('wakeLockEnabledInput'),
+    wakeLockMinutesInput: document.getElementById('wakeLockMinutesInput'),
+    wakeLockMinutesRow: document.getElementById('wakeLockMinutesRow'),
     restoreDefaultsButton: document.getElementById('restoreDefaultsButton'),
     appVersion: document.getElementById('appVersion'),
     appUpdatedAt: document.getElementById('appUpdatedAt'),
@@ -103,12 +109,22 @@
   els.settingsForm.addEventListener('submit', saveSettingsFromForm);
   els.restoreDefaultsButton.addEventListener('click', () => fillSettingsForm(DEFAULT_SETTINGS));
   els.idleResetEnabledInput.addEventListener('change', refreshIdleSettingAvailability);
+  els.wakeLockEnabledInput.addEventListener('change', refreshWakeLockSettingAvailability);
 
   document.addEventListener('pointerdown', markInteraction, { capture: true, passive: true });
   document.addEventListener('keydown', (event) => {
     markInteraction();
     if (event.key === 'Escape' && !els.settingsOverlay.hidden) closeSettings();
   }, { capture: true });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      syncWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+  });
+  window.addEventListener('pagehide', releaseWakeLock);
 
   function boundedInt(value, fallback, min, max) {
     const number = Number.parseInt(value, 10);
@@ -125,6 +141,10 @@
         ? source.idleResetEnabled
         : DEFAULT_SETTINGS.idleResetEnabled,
       idleResetSeconds: boundedInt(source.idleResetSeconds, DEFAULT_SETTINGS.idleResetSeconds, 30, 3600),
+      wakeLockEnabled: typeof source.wakeLockEnabled === 'boolean'
+        ? source.wakeLockEnabled
+        : DEFAULT_SETTINGS.wakeLockEnabled,
+      wakeLockMinutes: boundedInt(source.wakeLockMinutes, DEFAULT_SETTINGS.wakeLockMinutes, 5, 240),
     };
   }
 
@@ -148,7 +168,9 @@
 
   function markInteraction() {
     state.lastInteractionAt = Date.now();
+    state.idleResetHandled = false;
     updateIdleElapsed();
+    syncWakeLock();
   }
 
   function updateIdleElapsed() {
@@ -158,8 +180,14 @@
     if (
       state.settings.idleResetEnabled
       && elapsedSeconds >= state.settings.idleResetSeconds
+      && !state.idleResetHandled
     ) {
+      state.idleResetHandled = true;
       resetAll({ fromIdle: true });
+    }
+
+    if (wakeLockExpired()) {
+      releaseWakeLock();
     }
   }
 
@@ -167,6 +195,67 @@
     if (state.idleTickerId) window.clearInterval(state.idleTickerId);
     state.idleTickerId = window.setInterval(updateIdleElapsed, 1000);
     updateIdleElapsed();
+  }
+
+  function wakeLockExpired() {
+    const elapsedMs = Date.now() - state.lastInteractionAt;
+    return elapsedMs >= state.settings.wakeLockMinutes * 60 * 1000;
+  }
+
+  function shouldHoldWakeLock() {
+    return state.settings.wakeLockEnabled
+      && document.visibilityState === 'visible'
+      && !wakeLockExpired();
+  }
+
+  async function requestWakeLock() {
+    if (
+      !shouldHoldWakeLock()
+      || state.wakeLock
+      || state.wakeLockRequestPending
+      || !('wakeLock' in navigator)
+    ) return;
+
+    state.wakeLockRequestPending = true;
+
+    try {
+      const lock = await navigator.wakeLock.request('screen');
+
+      if (!shouldHoldWakeLock()) {
+        await lock.release();
+        return;
+      }
+
+      state.wakeLock = lock;
+      lock.addEventListener('release', () => {
+        if (state.wakeLock === lock) state.wakeLock = null;
+      }, { once: true });
+    } catch (error) {
+      // 非対応状態・低電力状態・OS判断などで拒否されてもアプリ本体は継続する。
+      state.wakeLock = null;
+    } finally {
+      state.wakeLockRequestPending = false;
+    }
+  }
+
+  async function releaseWakeLock() {
+    const lock = state.wakeLock;
+    state.wakeLock = null;
+    if (!lock) return;
+
+    try {
+      await lock.release();
+    } catch (error) {
+      // 既にブラウザ側で解除済みの場合は何もしない。
+    }
+  }
+
+  function syncWakeLock() {
+    if (shouldHoldWakeLock()) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
   }
 
   function currentRecord() {
@@ -422,22 +511,12 @@
     renderMagic();
   }
 
-  function decodeMagic(line, fan) {
-    if (!line && !fan) return { truth: '全部踏まない', falsehood: '全部踏む' };
-    if (line && !fan) return { truth: '直線踏む', falsehood: '扇踏む' };
-    if (!line && fan) return { truth: '扇踏む', falsehood: '直線踏む' };
-    return { truth: '全部踏む', falsehood: '全部踏まない' };
-  }
-
   function renderMagic() {
     els.magicLineButton.textContent = state.magic.line ? '踏む' : '踏まない';
     els.magicFanButton.textContent = state.magic.fan ? '踏む' : '踏まない';
     els.magicLineButton.setAttribute('aria-pressed', String(state.magic.line));
     els.magicFanButton.setAttribute('aria-pressed', String(state.magic.fan));
 
-    const decoded = decodeMagic(state.magic.line, state.magic.fan);
-    els.magicOutTrue.textContent = decoded.truth;
-    els.magicOutFalse.textContent = decoded.falsehood;
   }
 
   function openSettings() {
@@ -456,13 +535,22 @@
     els.gc2SecondsInput.value = settings.gc2Seconds;
     els.idleResetEnabledInput.checked = settings.idleResetEnabled;
     els.idleResetSecondsInput.value = settings.idleResetSeconds;
+    els.wakeLockEnabledInput.checked = settings.wakeLockEnabled;
+    els.wakeLockMinutesInput.value = settings.wakeLockMinutes;
     refreshIdleSettingAvailability();
+    refreshWakeLockSettingAvailability();
   }
 
   function refreshIdleSettingAvailability() {
     const enabled = els.idleResetEnabledInput.checked;
     els.idleResetSecondsInput.disabled = !enabled;
     els.idleResetSecondsRow.style.opacity = enabled ? '1' : '.5';
+  }
+
+  function refreshWakeLockSettingAvailability() {
+    const enabled = els.wakeLockEnabledInput.checked;
+    els.wakeLockMinutesInput.disabled = !enabled;
+    els.wakeLockMinutesRow.style.opacity = enabled ? '1' : '.5';
   }
 
   function saveSettingsFromForm(event) {
@@ -473,10 +561,13 @@
       gc2Seconds: els.gc2SecondsInput.value,
       idleResetEnabled: els.idleResetEnabledInput.checked,
       idleResetSeconds: els.idleResetSecondsInput.value,
+      wakeLockEnabled: els.wakeLockEnabledInput.checked,
+      wakeLockMinutes: els.wakeLockMinutesInput.value,
     });
 
     persistSettings();
     fillSettingsForm(state.settings);
+    syncWakeLock();
     closeSettings();
   }
 
@@ -491,10 +582,12 @@
       disableAcceleration: false,
     };
 
-    state.lastInteractionAt = Date.now();
-
     if (fromIdle) {
       els.settingsOverlay.hidden = true;
+    } else {
+      state.lastInteractionAt = Date.now();
+      state.idleResetHandled = false;
+      syncWakeLock();
     }
 
     els.resultScreen.hidden = true;
@@ -513,4 +606,5 @@
   renderMagic();
   renderPhase();
   startIdleTicker();
+  syncWakeLock();
 }());
