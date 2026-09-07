@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#101319">
   <title>絶妖星乱舞 P4 カンペ</title>
-  <link rel="stylesheet" href="./css/style.css?v=20260903-1517">
+  <link rel="stylesheet" href="./css/style.css?v=20260907-r4">
 </head>
 <body>
   <div id="portraitWarning" class="portrait-warning" aria-hidden="true">
@@ -120,11 +120,6 @@
           <span class="magic-charge-label">扇</span>
           <button id="magicFanButton" class="magic-toggle-button" data-magic-toggle="fan" aria-pressed="false">踏まない</button>
         </div>
-        <div class="magic-out-block" aria-live="polite">
-          <div class="magic-charge-title">マジックアウト</div>
-          <div class="magic-out-row"><span class="magic-out-truth">真：</span><strong id="magicOutTrue">全部踏まない</strong></div>
-          <div class="magic-out-row"><span class="magic-out-truth">偽：</span><strong id="magicOutFalse">全部踏む</strong></div>
-        </div>
       </section>
     </section>
   </main>
@@ -169,7 +164,24 @@
           <span class="setting-control"><input id="idleResetSecondsInput" type="number" min="30" max="3600" step="10" inputmode="numeric"> 秒</span>
         </label>
 
-        <p class="settings-note">設定値はこの端末の localStorage にのみ保存します。進行中のGCカウントダウンは変更せず、次回開始時から新しい値を使用します。</p>
+
+        <label class="setting-row setting-row-toggle">
+          <span>
+            <strong>画面スリープ防止</strong>
+            <small>最後の操作から指定時間、対応ブラウザでは画面の自動消灯を抑止</small>
+          </span>
+          <input id="wakeLockEnabledInput" class="toggle-input" type="checkbox">
+        </label>
+
+        <label class="setting-row" id="wakeLockMinutesRow">
+          <span>
+            <strong>スリープ防止時間</strong>
+            <small>既定値は30分。時間経過後はOS標準の自動ロックに戻ります</small>
+          </span>
+          <span class="setting-control"><input id="wakeLockMinutesInput" type="number" min="5" max="240" step="5" inputmode="numeric"> 分</span>
+        </label>
+
+        <p class="settings-note">設定値はこの端末の localStorage にのみ保存します。進行中のGCカウントダウンは変更せず、GC切替時間は次回開始時から使用し、スリープ防止設定は保存後すぐに反映します。</p>
 
         <div class="settings-actions">
           <button id="restoreDefaultsButton" class="secondary-button" type="button">既定値に戻す</button>
@@ -178,15 +190,15 @@
       </form>
 
       <div class="app-version">
-        <span id="appVersion">Version 2026.09.03-r1</span>
-        <span id="appUpdatedAt">Updated 2026-09-03 15:17 JST</span>
+        <span id="appVersion">Version 2026.09.07-r4</span>
+        <span id="appUpdatedAt">Updated 2026-09-07 23:00 JST</span>
       </div>
     </section>
   </div>
 
   <div class="copyright-notice" aria-label="Copyright">FINAL FANTASY XIV © SQUARE ENIX</div>
 
-  <script src="./js/rules.js?v=20260903-1517"></script>
-  <script src="./js/app.js?v=20260903-1517"></script>
+  <script src="./js/rules.js?v=20260907-r4"></script>
+  <script src="./js/app.js?v=20260907-r4"></script>
 </body>
 </html>
