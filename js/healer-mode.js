@@ -58,15 +58,9 @@
         font-size: clamp(20px, 2.7vw, 34px);
       }
 
-      .healer-acceleration-button::before {
-        content: "加速";
-        color: var(--muted);
-        font-size: clamp(10px, 1vw, 13px);
-        font-weight: 850;
-      }
-
       .healer-action-card {
         min-height: 0;
+        grid-row: span 2;
         border: 1px solid var(--border);
         border-radius: 13px;
         background: var(--panel-2);
