@@ -13,5 +13,9 @@
 - exdeath-water.png
 - exdeath-acceleration.png
 - gaze.png
+- job-whm.png（白魔道士）
+- job-sch.png（学者）
+
+ヒーラー加速度モードでは、`job-whm.png` / `job-sch.png` をGC入力画面と処理内容画面の両方で使用します。画像がない場合は白 / 学の文字のみ表示されます。
 
 推奨：正方形PNG、背景透過。例：256×256px。
