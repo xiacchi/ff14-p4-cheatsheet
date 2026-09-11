@@ -3,13 +3,13 @@
 
   const STORAGE_KEY = 'ff14P4Cheatsheet.healerAcceleration.v1';
   const APP_INFO = {
-    version: '2026.09.11-r5',
-    updatedAt: '2026-09-11 15:40 JST',
+    version: '2026.09.11-r6',
+    updatedAt: '2026-09-11 16:53 JST',
   };
 
   const HEALERS = [
-    { key: 'white', label: '白' },
-    { key: 'scholar', label: '学' },
+    { key: 'white', label: '白', name: '白魔道士', icon: './assets/icons/job-whm.png' },
+    { key: 'scholar', label: '学', name: '学者', icon: './assets/icons/job-sch.png' },
   ];
 
   const state = {
@@ -58,6 +58,11 @@
         font-size: clamp(20px, 2.7vw, 34px);
       }
 
+      .healer-acceleration-button img {
+        width: min(6vh, 48px);
+        height: min(6vh, 48px);
+      }
+
       .healer-action-card {
         min-height: 0;
         grid-row: span 2;
@@ -85,12 +90,18 @@
       .healer-action-identity {
         min-width: 0;
         display: grid;
-        grid-template-columns: auto auto minmax(0, 1fr);
+        grid-template-columns: auto auto auto minmax(0, 1fr);
         align-items: center;
         justify-content: center;
         gap: 6px;
         color: var(--muted);
         font-weight: 800;
+      }
+
+      .healer-job-icon {
+        width: min(5.6vh, 44px);
+        height: min(5.6vh, 44px);
+        object-fit: contain;
       }
 
       .healer-job-label {
@@ -119,6 +130,11 @@
           font-size: clamp(17px, 2.35vw, 28px);
         }
 
+        .healer-acceleration-button img {
+          width: min(4.8vh, 32px);
+          height: min(4.8vh, 32px);
+        }
+
         .healer-action-card {
           padding: 2px 6px;
           border-radius: 10px;
@@ -128,6 +144,11 @@
           grid-template-columns: minmax(66px, .7fr) 1.3fr;
           gap: 5px;
           padding: 2px 0;
+        }
+
+        .healer-job-icon {
+          width: min(4.5vh, 30px);
+          height: min(4.5vh, 30px);
         }
 
         .healer-action-card .action-icon {
@@ -203,7 +224,10 @@
       button.className = 'choice-button healer-acceleration-button';
       button.dataset.healer = healer.key;
       button.setAttribute('aria-pressed', 'false');
-      button.innerHTML = `<span>${healer.label}</span>`;
+      button.innerHTML = `
+        <img src="${healer.icon}" alt="" onerror="this.hidden=true">
+        <span>${healer.label}</span>
+      `;
       button.addEventListener('click', () => toggleHealerAcceleration(healer.key));
       row.appendChild(button);
     });
@@ -268,12 +292,14 @@
       button.disabled = derived;
       button.setAttribute('aria-pressed', String(selected));
 
+      const healer = HEALERS.find((item) => item.key === button.dataset.healer);
+      const label = healer?.name || button.textContent.trim();
       if (derived && selected) {
-        button.setAttribute('aria-label', `${button.textContent.trim()}（GC1から自動設定）`);
+        button.setAttribute('aria-label', `${label}（GC1から自動設定）`);
       } else if (derived) {
-        button.setAttribute('aria-label', `${button.textContent.trim()}（GC1から自動的に対象外）`);
+        button.setAttribute('aria-label', `${label}（GC1から自動的に対象外）`);
       } else {
-        button.removeAttribute('aria-label');
+        button.setAttribute('aria-label', label);
       }
     });
   }
@@ -364,6 +390,7 @@
 
       row.innerHTML = `
         <div class="healer-action-identity">
+          <img class="healer-job-icon" src="${healer.icon}" alt="" onerror="this.hidden=true">
           <span class="healer-job-label">${healer.label}</span>
           <img class="action-icon" src="./assets/icons/exdeath-acceleration.png" alt="加速度" onerror="this.hidden=true">
           <div class="healer-action-meta">
